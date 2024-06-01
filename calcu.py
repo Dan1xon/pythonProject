@@ -12,9 +12,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtGui import QColor, QBrush
 from PyQt5.QtCore import Qt
-
-import sys
-
+import pickle
+import os
 
 class Ui_MainWindow1(object):
     def setupUi(self, MainWindow1):
@@ -34,11 +33,6 @@ class Ui_MainWindow1(object):
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.listWidget = QtWidgets.QListWidget(self.groupBox)
         self.listWidget.setObjectName("listWidget")
-        item = QListWidgetItem()
-        brush = QBrush(QColor(0, 0, 0))
-        brush.setStyle(Qt.NoBrush)
-        item.setForeground(brush)
-        self.listWidget.addItem(item)
         self.horizontalLayout_2.addWidget(self.listWidget)
         self.gridLayout_2.addLayout(self.horizontalLayout_2, 0, 3, 1, 1)
         self.gridLayout.addLayout(self.gridLayout_2, 1, 0, 1, 1)
@@ -55,6 +49,9 @@ class Ui_MainWindow1(object):
         self.verticalLayout.addWidget(self.label_2)
         self.gridLayout.addLayout(self.verticalLayout, 1, 2, 1, 1)
         self.verticalLayout_2.addWidget(self.groupBox)
+        self.saveButton = QtWidgets.QPushButton(self.centralwidget)
+        self.saveButton.setObjectName("saveButton")
+        self.verticalLayout_2.addWidget(self.saveButton)
 
         # Database for item labels
         self.item_labels = {}
@@ -69,7 +66,6 @@ class Ui_MainWindow1(object):
 
         self.toolButton_2.clicked.connect(self.add_item)
         self.toolButton_3.clicked.connect(self.remove_item)
-
         self.listWidget.itemClicked.connect(self.on_item_clicked)
 
         self.lineEdit = QtWidgets.QLineEdit(self.groupBox)
@@ -77,41 +73,54 @@ class Ui_MainWindow1(object):
         self.gridLayout.addWidget(self.lineEdit, 1, 2, 1, 1)
         self.lineEdit.textChanged.connect(self.update_item_text)
 
+        self.saveButton.clicked.connect(self.save_items)
+
+        self.load_items()  # Load items when the application starts
+
     def retranslateUi(self, MainWindow1):
         _translate = QtCore.QCoreApplication.translate
         MainWindow1.setWindowTitle(_translate("MainWindow1", "MainWindow"))
         self.groupBox.setTitle(_translate("MainWindow1", "GroupBox"))
-        __sortingEnabled = self.listWidget.isSortingEnabled()
-        self.listWidget.setSortingEnabled(False)
-        item = self.listWidget.item(0)
-        item.setText(_translate("MainWindow1", "New Item"))
-        self.item_labels["New Item"] = "TextLabel"  # Adding initial label to database
-        self.listWidget.setSortingEnabled(__sortingEnabled)
-        self.toolButton_3.setText(_translate("MainWindow1", "Delete"))
-        self.toolButton_2.setText(_translate("MainWindow1", "Add"))
+        self.toolButton_3.setText(_translate("MainWindow1", "Удалить"))
+        self.toolButton_2.setText(_translate("MainWindow1", "Добавить"))
         self.label_2.setText(_translate("MainWindow1", "TextLabel"))
+        self.saveButton.setText(_translate("MainWindow1", "Сохранить"))
 
     def on_item_clicked(self, item):
         self.label_2.setText(self.item_labels.get(item.text(), ""))
 
     def add_item(self):
         new_item_text = self.label_2.text()
-        self.listWidget.addItem(new_item_text)
-        self.item_labels[new_item_text] = "TextLabel"  # Adding label to database
+        if new_item_text and new_item_text not in self.item_labels:
+            self.listWidget.addItem(new_item_text)
+            self.item_labels[new_item_text] = "TextLabel"  # Adding label to database
 
     def remove_item(self):
-        if self.listWidget.currentRow() != -1:
-            item = self.listWidget.takeItem(self.listWidget.currentRow())
-            del self.item_labels[item.text()]  # Removing label from database
+        current_row = self.listWidget.currentRow()
+        if current_row != -1:
+            item = self.listWidget.takeItem(current_row)
+            if item:
+                del self.item_labels[item.text()]
 
     def update_item_text(self, new_text):
         current_row = self.listWidget.currentRow()
         if current_row != -1:
             current_item = self.listWidget.item(current_row)
-            self.item_labels[current_item.text()] = new_text
-            current_item.setText(new_text)
+            old_text = current_item.text()
+            if old_text != new_text:
+                current_item.setText(new_text)
+                self.item_labels[new_text] = self.item_labels.pop(old_text)
 
+    def save_items(self):
+        with open('items.pkl', 'wb') as f:
+            pickle.dump(self.item_labels, f)
 
+    def load_items(self):
+        if os.path.exists('items.pkl'):
+            with open('items.pkl', 'rb') as f:
+                self.item_labels = pickle.load(f)
+            for item_text in self.item_labels.keys():
+                self.listWidget.addItem(item_text)
 
 if __name__ == "__main__":
     import sys
@@ -121,5 +130,4 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow1)
     MainWindow1.show()
     sys.exit(app.exec_())
-
 

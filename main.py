@@ -1,6 +1,7 @@
 import sqlite3
 from PyQt5 import QtWidgets
-import calc
+import calc, calcu
+from calcu import Ui_MainWindow1  # Assuming MainWindow1 is defined in calcu.py
 
 db = sqlite3.connect('database.db')
 cursor = db.cursor()
@@ -50,7 +51,7 @@ class Registration(QtWidgets.QMainWindow, calc.Ui_MainWindow):
             self.label.setText(f'Аккаунт {user_login} успешно зарегистрирован!')
             db.commit()
         else:
-            self.label.setText('Такая записать уже имеется!')
+            self.label.setText('Такая запись уже имеется!')
 
 
 class Login(QtWidgets.QMainWindow, calc.Ui_MainWindow):
@@ -89,18 +90,19 @@ class Login(QtWidgets.QMainWindow, calc.Ui_MainWindow):
         check_login = cursor.fetchall()
 
         if check_pass and check_login:
-            if check_pass and check_login:
-                if check_pass[0][0] == user_password and check_login[0][0] == user_login:
-                    self.label.setText('Успешная авторизация!')
-                    MainWindow1 = QtWidgets.QMainWindow()
-                    ui = Ui_MainWindow1()
-                    ui.setupUi(MainWindow1)
-                    MainWindow1.show()
-                    self.hide()
+            if check_pass[0][0] == user_password and check_login[0][0] == user_login:
+                self.label.setText('Успешная авторизация!')
+
+                self.MainWindow1 = QtWidgets.QMainWindow()
+                self.ui = Ui_MainWindow1()
+                self.ui.setupUi(self.MainWindow1)
+                self.MainWindow1.show()
+                self.hide()  # Hide the login window after successful login
             else:
                 self.label.setText('Ошибка авторизации!')
         else:
             self.label.setText('Запись отсутствует')
+
 
 App = QtWidgets.QApplication([])
 window = Login()
